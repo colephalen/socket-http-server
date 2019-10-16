@@ -7,21 +7,7 @@ import os
 import mimetypes
 
 def response_ok(body=b"This is a minimal response", mimetype=b"text/plain"):
-    """
-    returns a basic HTTP response
-    Ex:
-        response_ok(
-            b"<html><h1>Welcome:</h1></html>",
-            b"text/html"
-        ) ->
 
-        b'''
-        HTTP/1.1 200 OK\r\n
-        Content-Type: text/html\r\n
-        \r\n
-        <html><h1>Welcome:</h1></html>\r\n
-        '''
-    """
     return b"\r\n".join([
         b'HTTP/1.1 200 OK',
         b'Content-Type: ' + mimetype,
@@ -29,8 +15,8 @@ def response_ok(body=b"This is a minimal response", mimetype=b"text/plain"):
         body,
         ])
 
+
 def response_method_not_allowed():
-    """Returns a 405 Method Not Allowed response"""
 
     return b"\r\n".join([
         b'HTTP/1.1 405 Method Not Allowed',
@@ -46,6 +32,7 @@ def response_not_found():
         b'',
         b'nothing here buddy',
         ])
+
 
 def parse_request(request):
 
@@ -63,17 +50,18 @@ def response_path(path):
 
     mesa = []
 
-    directory = os.path.abspath('webroot')
-    lunch = directory + path
+    # directory = os.path.abspath('webroot')
+    # lunch = directory + path  # what i did at home
+
+    lunch = os.path.join('webroot', *path.strip('/').split('/'))  # fancy way in class. Syntax Error?
 
     if os.path.isdir(lunch):  # is True:
         for root, dirs, files in os.walk(lunch):  
-        # this doesn't display the 'images' directory within 'webroot' directory
+
             for filename in files:
                 mesa += [(' \n' + filename).encode('utf8')]
             for dirname in dirs:
                 mesa += [(' \n' + dirname).encode('utf8')]
-        # EDIT, now it does
 
         # mime_type = b"text/plain"
         mime_type = str(mimetypes.guess_type(path)[0]).encode('utf8')
@@ -85,6 +73,7 @@ def response_path(path):
         mime_type = str(mimetypes.guess_type(path)[0]).encode('utf8')
         with open(lunch, 'rb') as f:
             content = f.read()
+        
         return content, mime_type
 
     raise NameError
@@ -112,13 +101,15 @@ def server(log_buffer=sys.stderr):
 
                     if '\r\n\r\n' in request:
                         break
+                    if not request:
+                        break  # this seems to work as a break
 		
                 print("Request received:\n{}\n\n".format(request))
 
                 try:
                     path = parse_request(request)
 
-                    content, mime_type = response_path(path)
+                    content, mime_type = response_path(path)  # added 
 
                     response = response_ok(
                         body=content,
@@ -127,7 +118,7 @@ def server(log_buffer=sys.stderr):
 
                 except NotImplementedError:
                     response = response_method_not_allowed()
-                    
+
                 except NameError:
                     response = response_not_found()
 
