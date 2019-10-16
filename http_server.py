@@ -40,7 +40,6 @@ def response_method_not_allowed():
 
 
 def response_not_found():
-    """Returns a 404 Not Found response"""
 
     return b"\r\n".join([
         b'HTTP/1.1 404 Not Found',
@@ -49,12 +48,7 @@ def response_not_found():
         ])
 
 def parse_request(request):
-    """
-    Given the content of an HTTP request, returns the path of that request.
 
-    This server only handles GET requests, so this method shall raise a
-    NotImplementedError if the method of the request is not GET.
-    """
     method, path, version = request.split('\r\n')[0].split()
 
     if method != 'GET':
@@ -63,41 +57,6 @@ def parse_request(request):
     return path
 
 def response_path(path):
-
-    # This method should return appropriate content and a mime type.
-
-    # If the requested path is a directory, then the content should be a
-    # plain-text listing of the contents with mimetype `text/plain`.
-
-    # If the path is a file, it should return the contents of that file
-    # and its correct mimetype.
-
-    # If the path does not map to a real location, it should raise an
-    # exception that the server can catch to return a 404 response.
-
-    # Ex:
-    #     response_path('/a_web_page.html') -> (b"<html><h1>North Carolina...",
-    #                                         b"text/html")
-
-    #     response_path('/images/sample_1.png')
-    #                     -> (b"A12BCF...",  # contents of sample_1.png
-    #                         b"image/png")
-
-    #     response_path('/') -> (b"images/, a_web_page.html, make_type.py,...",
-    #                          b"text/plain")
-
-    #     response_path('/a_page_that_doesnt_exist.html') -> Raises a NameError
-
-    # TODO: Raise a NameError if the requested content is not present
-    # under webroot.
-
-    # TODO: Fill in the appropriate content and mime_type give the path.
-    # See the assignment guidelines for help on "mapping mime-types", though
-    # you might need to create a special case for handling make_time.py
-
-    # If the path is "make_time.py", then you may OPTIONALLY return the
-    # result of executing `make_time.py`. But you need only return the
-    # CONTENTS of `make_time.py`.
 
     content = b""
     mime_type = b""
@@ -108,22 +67,27 @@ def response_path(path):
     lunch = directory + path
 
     if os.path.isdir(lunch):  # is True:
-        for root, dirs, files in os.walk(lunch):
+        for root, dirs, files in os.walk(lunch):  
+        # this doesn't display the 'images' directory within 'webroot' directory
             for filename in files:
                 mesa += [(' \n' + filename).encode('utf8')]
+            for dirname in dirs:
+                mesa += [(' \n' + dirname).encode('utf8')]
+        # EDIT, now it does
+
         # mime_type = b"text/plain"
-        mime_type = str(mimetypes.guess_type(path)[0]).encode('utf-8')
+        mime_type = str(mimetypes.guess_type(path)[0]).encode('utf8')
         
         content = content.join(mesa)
         return content, mime_type
 
     if os.path.isfile(lunch):
-        mime_type = str(mimetypes.guess_type(path)[0]).encode('utf-8')
+        mime_type = str(mimetypes.guess_type(path)[0]).encode('utf8')
         with open(lunch, 'rb') as f:
             content = f.read()
         return content, mime_type
 
-    raise NameError  # ??
+    raise NameError
 
 
 def server(log_buffer=sys.stderr):
@@ -153,14 +117,7 @@ def server(log_buffer=sys.stderr):
 
                 try:
                     path = parse_request(request)
-                    # TODO: Use response_path to retrieve the content and the mimetype,
-                    # based on the request path.
 
-                    # TODO; If parse_request raised a NotImplementedError, then let
-                    # response be a method_not_allowed response. If response_path raised
-                    # a NameError, then let response be a not_found response. Else,
-                    # use the content and mimetype from response_path to build a 
-                    # response_ok.
                     content, mime_type = response_path(path)
 
                     response = response_ok(
@@ -170,6 +127,7 @@ def server(log_buffer=sys.stderr):
 
                 except NotImplementedError:
                     response = response_method_not_allowed()
+                    
                 except NameError:
                     response = response_not_found()
 
